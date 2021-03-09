@@ -1,0 +1,1 @@
+Project develop during the Alura's Kafka course: [Kafka - Introdução a Streams em Microserviços](https://cursos.alura.com.br/course/kafka-introducao-a-streams-em-microservicos)
