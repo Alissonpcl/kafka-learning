@@ -1,4 +1,8 @@
-io/alissonlima/javakafkaclient/NewOrderMain.java
- io.alissonlima.javakafkaclient.NewOrderMain
+io/alissonlima/javakafkaclient/LogService.java
+ io.alissonlima.javakafkaclient.LogService
+io/alissonlima/javakafkaclient/EmailService.java
+ io.alissonlima.javakafkaclient.EmailService
 io/alissonlima/javakafkaclient/FraudDetectorMain.java
  io.alissonlima.javakafkaclient.FraudDetectorMain
+io/alissonlima/javakafkaclient/NewOrderMain.java
+ io.alissonlima.javakafkaclient.NewOrderMain
