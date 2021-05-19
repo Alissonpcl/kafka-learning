@@ -1,11 +1,8 @@
 package io.alissonlima.javakafkaclient;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.kafka.common.serialization.StringSerializer;
 
 import java.time.Duration;
 import java.util.Collections;
@@ -52,6 +49,11 @@ public class FraudDetectorMain {
         // Group is used to differentiate consumers that must consuming
         // messages from the same Topic
         properties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, FraudDetectorMain.class.getName());
+
+        // Defines the max amount of message this client will receive
+        // each time it ask for new messages. It is useful to prevent
+        // losing commits by kafka rebalance.
+        properties.setProperty(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, "1");
 
         return properties;
     }
