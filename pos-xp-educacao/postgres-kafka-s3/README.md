@@ -101,29 +101,6 @@ O sufixo do nome do tópico deve possuir o mesmo nome da tabela cadastrado no ar
 
 ## 7 - Registrar os parâmetros de configuração do connector no kafka
 
-Para isso, vamos precisar de um arquivo no formato `json` contendo as configurações do conector que vamos registrar. O arquivo `connect_postgres.config` possui um exemplo de implementação. O conteúdo do arquivo está transcrito abaixo:
-
-```json
-{
-    "name": "postg-connector",
-    "config": {
-        "connector.class": "io.confluent.connect.jdbc.JdbcSourceConnector",
-        "tasks.max": 1,    
-        "connection.url": "jdbc:postgresql://postgres:5432/postgres",
-        "connection.user": "postgres",
-        "connection.password": "postgres",
-        "mode": "timestamp",
-        "timestamp.column.name": "dt_update",
-        "table.whitelist": "public.customers",
-        "topic.prefix": "postgres-",
-        "validate.non.null": "false",
-        "poll.interval.ms": 500
-    }
-}
-```
-
-Com o arquivo, fazemos uma chamada à API do Kafka para registrar os parâmetros:
-
 ```bash
 curl -X POST -H "Content-Type: application/json" \
     --data @connectors/connect-pg-source.config localhost:8083/connectors    
@@ -141,7 +118,6 @@ kafka-topics --bootstrap-server localhost:9092 \
 --topic postgres-customers
 ```
 
-
 Este comando cria um conector que irá puxar todo o conteúdo da tabela mais todos os novos dados que forem inseridos. **Atenção**: O Kafka connect não puxa, por default, alterações feitas em registros já existentes. Puxa apenas novos registros. Para verificar se nossa configuração foi criada corretamente e o conector está ok, vamos exibir os logs.
 
 ```bash
@@ -150,38 +126,35 @@ docker logs -f connect
 
 e verifique se não há nenhuma mensagem de erro.
 
-Agora, vamos subir um `sink connector` para entregar os dados desse tópico diretamente ao S3. Um exemplo de configuração do conector está apresentado abaixo:
+Removendo o connector
 
-```json
-{
-    "name": "customers-s3-sink",
-    "config": {
-        "connector.class": "io.confluent.connect.s3.S3SinkConnector",
-        "format.class": "io.confluent.connect.s3.format.json.JsonFormat",
-        "keys.format.class": "io.confluent.connect.s3.format.json.JsonFormat",
-        "schema.generator.class": "io.confluent.connect.storage.hive.schema.DefaultSchemaGenerator",
-        "flush.size": 2,
-        "schema.compatibility": "FULL",
-        "s3.bucket.name": "NOME-DO-BUCKET",
-        "s3.region": "us-east-1",
-        "s3.object.tagging": true,
-        "s3.ssea.name": "AES256",
-        "topics.dir": "raw-data/kafka",
-        "storage.class": "io.confluent.connect.s3.storage.S3Storage",
-        "tasks.max": 1,
-        "topics": "postgres-customers"
-    }
-}
+```bash
+ curl -X DELETE localhost:8083/connectors/postg-connector
 ```
 
-Para subir o sink, usamos o seguinte comando:
+Agora, vamos subir um `sink connector` para entregar os dados desse tópico diretamente ao S3. 
 
 ```bash
 curl -X POST -H "Content-Type: application/json" \
-    --data @connectors/sink/connect_s3_sink.config localhost:8083/connectors
+    --data @connectors/connect-s3-sink.config localhost:8083/connectors
 ```
 
 Este sink vai pegar todos os eventos no tópico `postgres-customers` e escrever no S3.
+
+Para resetar caso precisa reiniciar o consumo:
+
+```bash
+# Delegar o connector
+curl -X DELETE localhost:8083/connectors/customers-s3-sink
+
+# Resetar o offset (inside broker/connect container)
+kafka-consumer-groups --bootstrap-server localhost:9092 \
+  --group connect-customers-s3-sink \
+  --reset-offsets \
+  --to-earliest \
+  --execute \
+  --topic postgres-customers
+```
 
 ## 8 - Iniciar um stream no ksqlDB
 
